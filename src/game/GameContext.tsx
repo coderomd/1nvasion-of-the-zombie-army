@@ -393,12 +393,14 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
               // Tower attacks this enemy
               updatedEnemy.health -= tower.damage;
               
-              // Update tower's last attack time
+              // Update tower's last attack time and trigger animation
               const towerIndex = state.towers.findIndex(t => t.id === tower.id);
               if (towerIndex !== -1) {
                 state.towers[towerIndex] = {
                   ...tower,
                   lastAttackTime: now,
+                  isAttacking: true,
+                  attackAnimationEnd: now + 300, // Animation duration in ms
                 };
               }
               
@@ -410,17 +412,25 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           return updatedEnemy;
         });
       
-      // Handle gold miners production
-      let additionalGold = 0;
+      // Reset attack animation states that have finished
       const updatedTowers = state.towers.map(tower => {
+        if (tower.isAttacking && tower.attackAnimationEnd && tower.attackAnimationEnd <= now) {
+          return {
+            ...tower,
+            isAttacking: false,
+          };
+        }
+        
+        // Process gold miners production
         if (tower.goldProductionRate && tower.lastGoldTime) {
           const goldElapsedTime = now - tower.lastGoldTime;
           // Gold miners produce every 5 seconds
           if (goldElapsedTime >= 5000) {
-            additionalGold += tower.goldProductionRate;
             return {
               ...tower,
               lastGoldTime: now,
+              isAttacking: true, // Show animation for gold production too
+              attackAnimationEnd: now + 300,
             };
           }
         }
@@ -438,7 +448,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...updatedState,
         enemies: survivingEnemies,
         towers: updatedTowers,
-        gold: updatedState.gold + goldFromKills + additionalGold,
+        gold: updatedState.gold + goldFromKills,
       };
     }
     

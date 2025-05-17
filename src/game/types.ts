@@ -39,6 +39,8 @@ export type Tower = {
   buffRadius?: number;
   goldProductionRate?: number;
   lastGoldTime?: number;
+  isAttacking?: boolean; // New field to track if tower is currently attacking
+  attackAnimationEnd?: number; // New field to track when attack animation should end
 };
 
 export enum EnemyType {
