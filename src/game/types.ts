@@ -58,6 +58,8 @@ export type Enemy = {
   pathIndex: number;
   goldReward: number;
   damage: number; // damage to player's lives
+  progress: number; // progress between current path point and next (0-1)
+  reachedEnd?: boolean; // flag to track if enemy reached the end
 };
 
 export type Wave = {
@@ -82,4 +84,6 @@ export type GameState = {
   selectedTower: Tower | null;
   waveNumber: number;
   totalWaves: number;
+  lastEnemySpawnTime: number; // timestamp of last enemy spawn
+  enemiesSpawned: number; // count of enemies spawned in current wave
 };

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { GameState, Tower, TowerType, Enemy, EnemyType, GridCell, PathPoint, Wave } from './types';
@@ -29,6 +28,7 @@ type GameAction =
   | { type: 'START_WAVE' }
   | { type: 'ENEMY_REACHED_END', payload: Enemy }
   | { type: 'ENEMY_KILLED', payload: Enemy }
+  | { type: 'SPAWN_ENEMY' }
   | { type: 'BUY_LIFE' };
 
 // Initialize grid with path
@@ -73,6 +73,25 @@ const initialState: GameState = {
   selectedTower: null,
   waveNumber: INITIAL_GAME_STATE.waveNumber,
   totalWaves: INITIAL_GAME_STATE.totalWaves,
+  lastEnemySpawnTime: 0,
+  enemiesSpawned: 0,
+};
+
+// Helper function to create a new enemy
+const createEnemy = (type: EnemyType): Enemy => {
+  const stats = ENEMY_BASE_STATS[type];
+  return {
+    id: uuidv4(),
+    type,
+    health: stats.health,
+    maxHealth: stats.health,
+    speed: stats.speed,
+    position: { ...GAME_PATH[0] }, // Start at the first path point
+    pathIndex: 0,
+    goldReward: stats.goldReward,
+    damage: stats.damage,
+    progress: 0, // Progress between current and next path point (0-1)
+  };
 };
 
 // Game logic reducer
@@ -82,6 +101,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         gameStatus: 'running',
+        lastEnemySpawnTime: Date.now(),
       };
       
     case 'PAUSE_GAME':
@@ -94,6 +114,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         gameStatus: 'running',
+        lastEnemySpawnTime: Date.now(),
       };
       
     case 'SELECT_TOWER_TYPE':
@@ -224,6 +245,30 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
     }
     
+    case 'SPAWN_ENEMY': {
+      // Check if we've spawned all enemies for this wave
+      if (state.enemiesSpawned >= state.wave.count) {
+        return {
+          ...state,
+          wave: {
+            ...state.wave,
+            completed: true,
+          }
+        };
+      }
+      
+      // Create a new enemy based on the wave definition
+      const enemyType = state.wave.enemies[state.enemiesSpawned % state.wave.enemies.length];
+      const newEnemy = createEnemy(enemyType);
+      
+      return {
+        ...state,
+        enemies: [...state.enemies, newEnemy],
+        enemiesSpawned: state.enemiesSpawned + 1,
+        lastEnemySpawnTime: Date.now(),
+      };
+    }
+    
     case 'UPDATE_ENEMIES': {
       // This will be called by the game loop to update enemy positions
       if (state.gameStatus !== 'running') {
@@ -239,6 +284,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             ...state,
             waveNumber: nextWaveNumber,
             wave: { ...WAVE_DEFINITIONS[nextWaveNumber - 1] },
+            enemiesSpawned: 0,
+            lastEnemySpawnTime: Date.now(),
           };
         } else {
           // Victory!
@@ -249,7 +296,150 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         }
       }
       
-      return state;
+      // Move existing enemies along the path
+      const now = Date.now();
+      const newEnemies = state.enemies.map(enemy => {
+        // Calculate how far the enemy should move
+        const elapsedSeconds = 1/30; // We're running at 30 FPS
+        const distanceToMove = enemy.speed * elapsedSeconds;
+        
+        // Update progress along current path segment
+        let newProgress = enemy.progress + distanceToMove;
+        let newPathIndex = enemy.pathIndex;
+        
+        // Check if enemy has reached the next path point
+        while (newProgress >= 1 && newPathIndex < GAME_PATH.length - 1) {
+          // Move to next path point
+          newProgress -= 1;
+          newPathIndex += 1;
+        }
+        
+        // If enemy has reached the end of the path
+        if (newPathIndex >= GAME_PATH.length - 1 && newProgress >= 1) {
+          // This enemy has reached the end and should be removed
+          // We'll handle this in a separate case to avoid modifying the array while iterating
+          return {
+            ...enemy,
+            pathIndex: newPathIndex,
+            progress: 1,
+            reachedEnd: true,
+          };
+        }
+        
+        // Calculate the new position based on interpolation between path points
+        const currentPoint = GAME_PATH[newPathIndex];
+        let nextPoint = currentPoint;
+        
+        // Only interpolate if not at the last point
+        if (newPathIndex < GAME_PATH.length - 1) {
+          nextPoint = GAME_PATH[newPathIndex + 1];
+        }
+        
+        // Interpolate between current point and next point
+        const newX = currentPoint.x + (nextPoint.x - currentPoint.x) * newProgress;
+        const newY = currentPoint.y + (nextPoint.y - currentPoint.y) * newProgress;
+        
+        return {
+          ...enemy,
+          pathIndex: newPathIndex,
+          progress: newProgress,
+          position: { x: newX, y: newY },
+        };
+      });
+      
+      // Handle enemies that reached the end
+      const enemiesAtEnd = newEnemies.filter(e => e.reachedEnd);
+      let updatedState = { ...state };
+      
+      // Process each enemy that reached the end
+      for (const enemy of enemiesAtEnd) {
+        const newLives = updatedState.lives - enemy.damage;
+        
+        if (newLives <= 0) {
+          // Game over
+          return {
+            ...updatedState,
+            enemies: newEnemies.filter(e => !e.reachedEnd),
+            lives: 0,
+            gameStatus: 'defeat',
+          };
+        }
+        
+        updatedState = {
+          ...updatedState,
+          lives: newLives,
+        };
+      }
+      
+      // Process tower attacks
+      const enemiesAfterTowerAttacks = newEnemies
+        .filter(e => !e.reachedEnd)
+        .map(enemy => {
+          let updatedEnemy = { ...enemy };
+          
+          // Check each tower for attacks
+          for (const tower of state.towers) {
+            // Skip if tower can't attack yet
+            if (now - tower.lastAttackTime < 1000 / tower.attackSpeed) {
+              continue;
+            }
+            
+            // Check if enemy is in range
+            const dx = tower.position.x - enemy.position.x;
+            const dy = tower.position.y - enemy.position.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance <= tower.range) {
+              // Tower attacks this enemy
+              updatedEnemy.health -= tower.damage;
+              
+              // Update tower's last attack time
+              const towerIndex = state.towers.findIndex(t => t.id === tower.id);
+              if (towerIndex !== -1) {
+                state.towers[towerIndex] = {
+                  ...tower,
+                  lastAttackTime: now,
+                };
+              }
+              
+              // If tower has area effect, we would damage other enemies here
+              break; // Tower can only attack one enemy per cycle
+            }
+          }
+          
+          return updatedEnemy;
+        });
+      
+      // Handle gold miners production
+      let additionalGold = 0;
+      const updatedTowers = state.towers.map(tower => {
+        if (tower.goldProductionRate && tower.lastGoldTime) {
+          const goldElapsedTime = now - tower.lastGoldTime;
+          // Gold miners produce every 5 seconds
+          if (goldElapsedTime >= 5000) {
+            additionalGold += tower.goldProductionRate;
+            return {
+              ...tower,
+              lastGoldTime: now,
+            };
+          }
+        }
+        return tower;
+      });
+      
+      // Process killed enemies
+      const killedEnemies = enemiesAfterTowerAttacks.filter(e => e.health <= 0);
+      const survivingEnemies = enemiesAfterTowerAttacks.filter(e => e.health > 0);
+      
+      // Calculate gold from killed enemies
+      const goldFromKills = killedEnemies.reduce((total, enemy) => total + enemy.goldReward, 0);
+      
+      return {
+        ...updatedState,
+        enemies: survivingEnemies,
+        towers: updatedTowers,
+        gold: updatedState.gold + goldFromKills + additionalGold,
+      };
     }
     
     case 'START_WAVE': {
@@ -257,44 +447,18 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         gameStatus: 'running',
+        lastEnemySpawnTime: Date.now(),
       };
     }
     
     case 'ENEMY_REACHED_END': {
-      const enemy = action.payload;
-      const newLives = state.lives - enemy.damage;
-      
-      // Remove the enemy
-      const newEnemies = state.enemies.filter(e => e.id !== enemy.id);
-      
-      // Check if game over
-      if (newLives <= 0) {
-        return {
-          ...state,
-          lives: 0,
-          enemies: newEnemies,
-          gameStatus: 'defeat',
-        };
-      }
-      
-      return {
-        ...state,
-        lives: newLives,
-        enemies: newEnemies,
-      };
+      // Handled in UPDATE_ENEMIES action now
+      return state;
     }
     
     case 'ENEMY_KILLED': {
-      const enemy = action.payload;
-      
-      // Remove the enemy and add gold
-      const newEnemies = state.enemies.filter(e => e.id !== enemy.id);
-      
-      return {
-        ...state,
-        enemies: newEnemies,
-        gold: state.gold + enemy.goldReward,
-      };
+      // Handled in UPDATE_ENEMIES action now
+      return state;
     }
     
     case 'BUY_LIFE': {
@@ -355,16 +519,22 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (state.gameStatus !== 'running') return;
     
     const gameLoop = setInterval(() => {
+      // Check if it's time to spawn a new enemy
+      const now = Date.now();
+      const timeSinceLastSpawn = now - state.lastEnemySpawnTime;
+      const spawnInterval = 1000 / state.wave.spawnRate;
+      
+      if (!state.wave.completed && timeSinceLastSpawn >= spawnInterval) {
+        dispatch({ type: 'SPAWN_ENEMY' });
+      }
+      
       // Update enemies (movement, etc.)
       dispatch({ type: 'UPDATE_ENEMIES' });
       
-      // TODO: Implement enemy spawning based on wave
-      // TODO: Tower targeting and damage calculations
-      // TODO: Gold miner gold production
     }, 1000 / 30); // 30fps
     
     return () => clearInterval(gameLoop);
-  }, [state.gameStatus]);
+  }, [state.gameStatus, state.lastEnemySpawnTime, state.wave]);
   
   // Provide context value
   const contextValue: GameContextType = {
