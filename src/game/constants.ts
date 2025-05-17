@@ -1,0 +1,164 @@
+
+import { TowerType, EnemyType } from './types';
+
+export const GRID_SIZE = 10;
+export const CELL_SIZE = 40; // pixels
+
+export const TOWER_BASE_STATS = {
+  [TowerType.KNIGHT]: {
+    damage: 15,
+    range: 1,
+    attackSpeed: 1,
+    cost: 100,
+    upgradeCost: 75,
+    areaEffect: false,
+    buffRadius: 0,
+    goldProductionRate: 0,
+  },
+  [TowerType.ARCHER]: {
+    damage: 8,
+    range: 3,
+    attackSpeed: 1.5,
+    cost: 75,
+    upgradeCost: 50,
+    areaEffect: false,
+    buffRadius: 0,
+    goldProductionRate: 0,
+  },
+  [TowerType.CANNON]: {
+    damage: 25,
+    range: 2,
+    attackSpeed: 0.5,
+    cost: 150,
+    upgradeCost: 100,
+    areaEffect: true,
+    buffRadius: 0,
+    goldProductionRate: 0,
+  },
+  [TowerType.GOLD_MINER]: {
+    damage: 0,
+    range: 0,
+    attackSpeed: 0,
+    cost: 200,
+    upgradeCost: 150,
+    areaEffect: false,
+    buffRadius: 0,
+    goldProductionRate: 10, // gold per 5 seconds
+  },
+  [TowerType.BLACKSMITH]: {
+    damage: 0,
+    range: 0,
+    attackSpeed: 0,
+    cost: 125,
+    upgradeCost: 100,
+    areaEffect: false,
+    buffRadius: 2, // affects knights in radius of 2 cells
+    goldProductionRate: 0,
+  },
+};
+
+export const ENEMY_BASE_STATS = {
+  [EnemyType.BASIC_ZOMBIE]: {
+    health: 100,
+    speed: 0.5, // cells per second
+    goldReward: 10,
+    damage: 1, // damage to player's lives
+  },
+  [EnemyType.FAST_ZOMBIE]: {
+    health: 60,
+    speed: 1,
+    goldReward: 15,
+    damage: 1,
+  },
+  [EnemyType.ARMORED_ZOMBIE]: {
+    health: 200,
+    speed: 0.3,
+    goldReward: 20,
+    damage: 2,
+  },
+  [EnemyType.SPITTER_ZOMBIE]: {
+    health: 80,
+    speed: 0.6,
+    goldReward: 15,
+    damage: 1,
+  },
+};
+
+export const INITIAL_GAME_STATE = {
+  gold: 250,
+  lives: 100,
+  waveNumber: 0,
+  totalWaves: 10,
+};
+
+// Define the game path - this will be a winding path from left to right
+export const GAME_PATH = [
+  { x: 0, y: 3 },
+  { x: 1, y: 3 },
+  { x: 2, y: 3 },
+  { x: 3, y: 3 },
+  { x: 3, y: 4 },
+  { x: 3, y: 5 },
+  { x: 3, y: 6 },
+  { x: 4, y: 6 },
+  { x: 5, y: 6 },
+  { x: 6, y: 6 },
+  { x: 6, y: 5 },
+  { x: 6, y: 4 },
+  { x: 6, y: 3 },
+  { x: 6, y: 2 },
+  { x: 7, y: 2 },
+  { x: 8, y: 2 },
+  { x: 9, y: 2 },
+];
+
+export const UPGRADE_MULTIPLIERS = {
+  damage: 1.5,
+  range: 1.2,
+  attackSpeed: 1.2,
+  upgradeCost: 1.5,
+  goldProductionRate: 1.5,
+};
+
+export const EXTRA_LIFE_BASE_COST = 100;
+export const EXTRA_LIFE_COST_MULTIPLIER = 1.25;
+
+export const WAVE_DEFINITIONS = Array.from({ length: 10 }, (_, i) => {
+  const waveNumber = i + 1;
+  let enemies: EnemyType[] = [];
+  
+  // Add basic zombies to all waves
+  enemies = Array(Math.floor(waveNumber * 2)).fill(EnemyType.BASIC_ZOMBIE);
+  
+  // Add fast zombies from wave 3
+  if (waveNumber >= 3) {
+    enemies = [...enemies, ...Array(Math.floor(waveNumber / 2)).fill(EnemyType.FAST_ZOMBIE)];
+  }
+  
+  // Add armored zombies from wave 5
+  if (waveNumber >= 5) {
+    enemies = [...enemies, ...Array(Math.floor(waveNumber / 3)).fill(EnemyType.ARMORED_ZOMBIE)];
+  }
+  
+  // Add spitter zombies from wave 7
+  if (waveNumber >= 7) {
+    enemies = [...enemies, ...Array(Math.floor(waveNumber / 4)).fill(EnemyType.SPITTER_ZOMBIE)];
+  }
+  
+  return {
+    number: waveNumber,
+    enemies,
+    count: enemies.length,
+    spawnRate: 0.5 + (waveNumber * 0.1), // enemies per second increases with wave number
+    spawnDelay: 5, // 5 seconds before wave starts
+    completed: false,
+  };
+});
+
+export const TOWER_DESCRIPTIONS = {
+  [TowerType.KNIGHT]: "Knights are melee blockers that deal medium damage to enemies passing by. They can be buffed by nearby Blacksmiths.",
+  [TowerType.ARCHER]: "Archers attack from afar with fast arrows that deal low damage. They're inexpensive but effective.",
+  [TowerType.CANNON]: "Cannons deliver high damage with area splash effect. Slow to reload but devastating when fired.",
+  [TowerType.GOLD_MINER]: "Gold Miners don't attack enemies but generate gold over time to fund your defenses.",
+  [TowerType.BLACKSMITH]: "Blacksmiths buff nearby Knights, increasing their damage and armor. They don't attack directly."
+};

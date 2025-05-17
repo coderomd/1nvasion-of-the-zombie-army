@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,19 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				game: {
+					'wood-dark': '#654321',
+					'wood-light': '#8B4513',
+					'stone-dark': '#7D8491',
+					'stone-light': '#ABB0B8',
+					'red-blood': '#8B0000',
+					'red-accent': '#A52A2A',
+					'gold-dark': '#D4AF37',
+					'gold-light': '#FFD700',
+					'green-moss': '#556B2F',
+					'green-grass': '#6B8E23',
+					'parchment': '#F5F5DC'
 				}
 			},
 			borderRadius: {
@@ -84,11 +98,25 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'zombie-walk': {
+					'0%': { transform: 'translateX(0) rotate(0deg)' },
+					'25%': { transform: 'translateX(2px) rotate(2deg)' },
+					'50%': { transform: 'translateX(0) rotate(0deg)' },
+					'75%': { transform: 'translateX(-2px) rotate(-2deg)' },
+					'100%': { transform: 'translateX(0) rotate(0deg)' }
+				},
+				'pulse-danger': {
+					'0%': { backgroundColor: 'rgba(220, 38, 38, 0.2)' },
+					'50%': { backgroundColor: 'rgba(220, 38, 38, 0.5)' },
+					'100%': { backgroundColor: 'rgba(220, 38, 38, 0.2)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'zombie-walk': 'zombie-walk 1s infinite',
+				'pulse-danger': 'pulse-danger 2s infinite'
 			}
 		}
 	},
