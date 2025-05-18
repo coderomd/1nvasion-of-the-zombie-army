@@ -353,7 +353,12 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       // Process each enemy that reached the end
       for (const enemy of enemiesAtEnd) {
-        const newLives = updatedState.lives - enemy.damage;
+        // Calculate damage based on zombie's remaining health
+        // Round to nearest 10, divide by 10, with minimum of 5
+        const roundedHealth = Math.round(enemy.health / 10) * 10;
+        const damageToPlayer = Math.max(5, Math.round(roundedHealth / 10));
+        
+        const newLives = updatedState.lives - damageToPlayer;
         
         if (newLives <= 0) {
           // Game over
