@@ -2,16 +2,22 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useGame } from '../GameContext';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Trophy, Repeat } from 'lucide-react';
 
 const VictoryScreen: React.FC = () => {
   // Access the game context
-  const { state } = useGame();
+  const { state, continueAfterVictory } = useGame();
   
   // Handle restart game
   const handleRestart = () => {
     // This will reset the game state and return to home screen
     window.location.reload();
+  };
+
+  // Handle continue playing
+  const handleContinue = () => {
+    // This will add more waves and continue the game
+    continueAfterVictory();
   };
 
   return (
@@ -40,12 +46,21 @@ const VictoryScreen: React.FC = () => {
           </div>
         </div>
         
-        <Button
-          onClick={handleRestart}
-          className="bg-game-wood-dark hover:bg-game-wood-medium text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
-        >
-          <ArrowLeft size={20} /> Play Again
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button
+            onClick={handleContinue}
+            className="bg-game-wood-dark hover:bg-game-wood-medium text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
+          >
+            <Repeat size={20} /> Continue Playing
+          </Button>
+          
+          <Button
+            onClick={handleRestart}
+            className="bg-game-gold-dark hover:bg-game-gold-medium text-game-wood-dark font-bold py-3 px-8 rounded-lg text-lg shadow-lg transition-all transform hover:scale-105 flex items-center gap-2"
+          >
+            <ArrowLeft size={20} /> Play Again
+          </Button>
+        </div>
       </div>
     </div>
   );

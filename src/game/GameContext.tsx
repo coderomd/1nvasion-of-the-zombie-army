@@ -11,7 +11,8 @@ import {
   UPGRADE_MULTIPLIERS,
   WAVE_DEFINITIONS,
   EXTRA_LIFE_BASE_COST,
-  EXTRA_LIFE_COST_MULTIPLIER
+  EXTRA_LIFE_COST_MULTIPLIER,
+  WAVE_COMPLETION_REWARDS
 } from './constants';
 
 // Define action types
@@ -29,7 +30,8 @@ type GameAction =
   | { type: 'ENEMY_REACHED_END', payload: Enemy }
   | { type: 'ENEMY_KILLED', payload: Enemy }
   | { type: 'SPAWN_ENEMY' }
-  | { type: 'BUY_LIFE' };
+  | { type: 'BUY_LIFE' }
+  | { type: 'CONTINUE_AFTER_VICTORY' };
 
 // Initialize grid with path
 const initializeGrid = (): GridCell[][] => {
@@ -277,6 +279,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       // Check if wave is complete and all enemies are dead
       if (state.wave.completed && state.enemies.length === 0) {
+        // Calculate wave completion rewards
+        const waveCompletionGold = WAVE_COMPLETION_REWARDS.BASE_GOLD +
+          (state.lives * WAVE_COMPLETION_REWARDS.PER_LIFE_BONUS) +
+          (state.towers.length * WAVE_COMPLETION_REWARDS.PER_TOWER_BONUS);
+        
         // Start next wave if available
         const nextWaveNumber = state.waveNumber + 1;
         if (nextWaveNumber <= state.totalWaves) {
@@ -286,12 +293,14 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             wave: { ...WAVE_DEFINITIONS[nextWaveNumber - 1] },
             enemiesSpawned: 0,
             lastEnemySpawnTime: Date.now(),
+            gold: state.gold + waveCompletionGold,
           };
         } else {
           // Victory!
           return {
             ...state,
             gameStatus: 'victory',
+            gold: state.gold + waveCompletionGold,
           };
         }
       }
@@ -389,12 +398,33 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
               continue;
             }
             
-            // Check if enemy is in range
-            const dx = tower.position.x - enemy.position.x;
-            const dy = tower.position.y - enemy.position.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
+            // Find all enemies in range
+            const enemiesInRange = newEnemies.filter(e => {
+              if (e.reachedEnd) return false;
+              
+              const dx = tower.position.x - e.position.x;
+              const dy = tower.position.y - e.position.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              return distance <= tower.range;
+            });
             
-            if (distance <= tower.range) {
+            // Skip if no enemies in range
+            if (enemiesInRange.length === 0) continue;
+            
+            // Sort enemies by pathIndex and progress to get the furthest along the path
+            const sortedEnemies = enemiesInRange.sort((a, b) => {
+              if (a.pathIndex !== b.pathIndex) {
+                return b.pathIndex - a.pathIndex; // Higher pathIndex is further
+              }
+              // If same pathIndex, compare progress
+              return b.progress - a.progress;
+            });
+            
+            // Target the furthest enemy
+            const targetEnemy = sortedEnemies[0];
+            
+            if (targetEnemy.id === enemy.id) {
               // Tower attacks this enemy
               updatedEnemy.health -= tower.damage;
               
@@ -490,6 +520,42 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
     }
     
+    case 'CONTINUE_AFTER_VICTORY': {
+      // Reset the game status but keep current progress
+      // Generate a new set of waves with increasing difficulty
+      const continuedWaves = Array.from({ length: 10 }, (_, i) => {
+        const waveNumber = i + state.totalWaves + 1;
+        let enemies: EnemyType[] = [];
+        
+        // Add more enemies with each continued wave
+        enemies = Array(Math.floor(waveNumber * 2)).fill(EnemyType.BASIC_ZOMBIE);
+        enemies = [...enemies, ...Array(Math.floor(waveNumber / 1.5)).fill(EnemyType.FAST_ZOMBIE)];
+        enemies = [...enemies, ...Array(Math.floor(waveNumber / 2)).fill(EnemyType.ARMORED_ZOMBIE)];
+        enemies = [...enemies, ...Array(Math.floor(waveNumber / 3)).fill(EnemyType.SPITTER_ZOMBIE)];
+        
+        return {
+          number: waveNumber,
+          enemies,
+          count: enemies.length,
+          spawnRate: 0.5 + (waveNumber * 0.1),
+          spawnDelay: 5,
+          completed: false,
+        };
+      });
+      
+      // Update wave definitions with our new continuation waves
+      const allWaves = [...WAVE_DEFINITIONS, ...continuedWaves];
+      
+      return {
+        ...state,
+        gameStatus: 'running',
+        waveNumber: state.waveNumber + 1,
+        totalWaves: state.totalWaves + 10, // Add 10 more waves
+        wave: allWaves[state.waveNumber], // Start with the next wave
+        lastEnemySpawnTime: Date.now(),
+      };
+    }
+    
     default:
       return state;
   }
@@ -509,6 +575,7 @@ interface GameContextType {
   sellTower: (tower: Tower) => void;
   startWave: () => void;
   buyLife: () => void;
+  continueAfterVictory: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -528,6 +595,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const sellTower = (tower: Tower) => dispatch({ type: 'SELL_TOWER', payload: tower });
   const startWave = () => dispatch({ type: 'START_WAVE' });
   const buyLife = () => dispatch({ type: 'BUY_LIFE' });
+  const continueAfterVictory = () => dispatch({ type: 'CONTINUE_AFTER_VICTORY' });
   
   // Update function for game loop
   useEffect(() => {
@@ -565,6 +633,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     sellTower,
     startWave,
     buyLife,
+    continueAfterVictory,
   };
   
   return (

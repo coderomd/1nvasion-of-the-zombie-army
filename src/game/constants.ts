@@ -1,4 +1,3 @@
-
 import { TowerType, EnemyType } from './types';
 
 export const GRID_SIZE = 10;
@@ -59,25 +58,25 @@ export const TOWER_BASE_STATS = {
 
 export const ENEMY_BASE_STATS = {
   [EnemyType.BASIC_ZOMBIE]: {
-    health: 200, // Doubled from 100
+    health: 175, // Reduced by 12.5% from 200
     speed: 0.5, // cells per second
     goldReward: 10,
     damage: 1, // damage to player's lives
   },
   [EnemyType.FAST_ZOMBIE]: {
-    health: 120, // Doubled from 60
+    health: 105, // Reduced by 12.5% from 120
     speed: 1,
     goldReward: 15,
     damage: 1,
   },
   [EnemyType.ARMORED_ZOMBIE]: {
-    health: 400, // Doubled from 200
+    health: 350, // Reduced by 12.5% from 400
     speed: 0.3,
     goldReward: 20,
     damage: 2,
   },
   [EnemyType.SPITTER_ZOMBIE]: {
-    health: 160, // Doubled from 80
+    health: 140, // Reduced by 12.5% from 160
     speed: 0.6,
     goldReward: 15,
     damage: 1,
@@ -154,6 +153,12 @@ export const WAVE_DEFINITIONS = Array.from({ length: 10 }, (_, i) => {
     completed: false,
   };
 });
+
+export const WAVE_COMPLETION_REWARDS = {
+  BASE_GOLD: 50,  // Base gold for completing a wave
+  PER_LIFE_BONUS: 2,  // Gold per each life remaining
+  PER_TOWER_BONUS: 5,  // Gold per tower built
+};
 
 export const TOWER_DESCRIPTIONS = {
   [TowerType.KNIGHT]: "Knights are melee blockers that deal medium damage to enemies passing by. They can be buffed by nearby Blacksmiths.",
