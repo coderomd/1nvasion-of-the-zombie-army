@@ -59,25 +59,25 @@ export const TOWER_BASE_STATS = {
 
 export const ENEMY_BASE_STATS = {
   [EnemyType.BASIC_ZOMBIE]: {
-    health: 100,
+    health: 200, // Doubled from 100
     speed: 0.5, // cells per second
     goldReward: 10,
     damage: 1, // damage to player's lives
   },
   [EnemyType.FAST_ZOMBIE]: {
-    health: 60,
+    health: 120, // Doubled from 60
     speed: 1,
     goldReward: 15,
     damage: 1,
   },
   [EnemyType.ARMORED_ZOMBIE]: {
-    health: 200,
+    health: 400, // Doubled from 200
     speed: 0.3,
     goldReward: 20,
     damage: 2,
   },
   [EnemyType.SPITTER_ZOMBIE]: {
-    health: 80,
+    health: 160, // Doubled from 80
     speed: 0.6,
     goldReward: 15,
     damage: 1,
