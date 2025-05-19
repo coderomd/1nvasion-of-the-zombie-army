@@ -2,6 +2,7 @@
 import React from 'react';
 import { useGame } from '../GameContext';
 import { Button } from '@/components/ui/button';
+import { CELL_SIZE } from '../constants';
 
 const TowerDetails: React.FC = () => {
   const { state, upgradeTower, sellTower, selectTower } = useGame();

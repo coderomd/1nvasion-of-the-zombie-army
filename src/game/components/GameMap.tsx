@@ -8,7 +8,7 @@ import EnemyComponent from './Enemy';
 
 const GameMap: React.FC = () => {
   const { state, placeTower, selectTower } = useGame();
-  const { grid, selectedTowerType } = state;
+  const { grid, selectedTowerType, selectedTower } = state;
 
   const handleCellClick = (cell: GridCell) => {
     if (selectedTowerType && !cell.isPath && !cell.hasTower) {
@@ -16,6 +16,26 @@ const GameMap: React.FC = () => {
     } else if (cell.hasTower && cell.tower) {
       selectTower(cell.tower);
     }
+  };
+
+  // Get the radius visualization for the selected tower
+  const renderTowerRadius = () => {
+    if (!selectedTower || !selectedTower.range) return null;
+
+    const radiusInPixels = selectedTower.range * CELL_SIZE;
+    const diameter = radiusInPixels * 2;
+    
+    return (
+      <div
+        className="absolute rounded-full border-2 border-blue-500/50 bg-blue-500/20 pointer-events-none z-10"
+        style={{
+          width: diameter,
+          height: diameter,
+          left: (selectedTower.position.x * CELL_SIZE) + (CELL_SIZE / 2) - radiusInPixels,
+          top: (selectedTower.position.y * CELL_SIZE) + (CELL_SIZE / 2) - radiusInPixels,
+        }}
+      />
+    );
   };
 
   return (
@@ -26,6 +46,9 @@ const GameMap: React.FC = () => {
         height: GRID_SIZE * CELL_SIZE
       }}
     >
+      {/* Tower radius visualization */}
+      {renderTowerRadius()}
+
       {/* Grid cells */}
       <div className="absolute inset-0 grid" style={{ 
         gridTemplateColumns: `repeat(${GRID_SIZE}, ${CELL_SIZE}px)`,
