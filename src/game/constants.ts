@@ -43,16 +43,16 @@ export const TOWER_BASE_STATS = {
     upgradeCost: 150,
     areaEffect: false,
     buffRadius: 0,
-    goldProductionRate: 10, // gold per 5 seconds
+    goldProductionRate: 10, // gold per 2 seconds (changed from 5 seconds)
   },
   [TowerType.BLACKSMITH]: {
-    damage: 0,
-    range: 0,
-    attackSpeed: 0,
+    damage: 5, // Added basic attack capability
+    range: 1, // Short range
+    attackSpeed: 0.7, // Slower attack speed
     cost: 125,
     upgradeCost: 100,
     areaEffect: false,
-    buffRadius: 2, // affects knights in radius of 2 cells
+    buffRadius: 2, // affects knights and miners in radius of 2 cells
     goldProductionRate: 0,
   },
 };
@@ -165,6 +165,6 @@ export const TOWER_DESCRIPTIONS = {
   [TowerType.KNIGHT]: "Knights are melee blockers that deal medium damage to enemies passing by. They can be buffed by nearby Blacksmiths.",
   [TowerType.ARCHER]: "Archers attack from afar with fast arrows that deal low damage. They're inexpensive but effective.",
   [TowerType.CANNON]: "Cannons deliver high damage with area splash effect. Slow to reload but devastating when fired.",
-  [TowerType.GOLD_MINER]: "Gold Miners don't attack enemies but generate gold over time to fund your defenses.",
-  [TowerType.BLACKSMITH]: "Blacksmiths buff nearby Knights, increasing their damage and armor. They don't attack directly."
+  [TowerType.GOLD_MINER]: "Gold Miners generate gold every 2 seconds to fund your defenses. Nearby Blacksmiths increase their production.",
+  [TowerType.BLACKSMITH]: "Blacksmiths buff nearby Knights and Gold Miners. They also have a basic attack capability."
 };

@@ -22,6 +22,13 @@ const TowerDetails: React.FC = () => {
       default: return type;
     }
   };
+  
+  const getBuffDescription = (type: string) => {
+    switch (type) {
+      case 'blacksmith': return "Buffs nearby Knights' damage and Gold Miners' production";
+      default: return "";
+    }
+  };
 
   return (
     <div className="game-panel">
@@ -75,14 +82,19 @@ const TowerDetails: React.FC = () => {
           {selectedTower.goldProductionRate && (
             <div className="flex justify-between">
               <span>Gold production:</span>
-              <span>{selectedTower.goldProductionRate}/5sec</span>
+              <span>{selectedTower.goldProductionRate}/2sec</span>
             </div>
           )}
           
           {selectedTower.buffRadius && selectedTower.buffRadius > 0 && (
-            <div className="flex justify-between">
-              <span>Buff radius:</span>
-              <span>{selectedTower.buffRadius} cells</span>
+            <div className="flex flex-col gap-1 border-t border-gray-300 pt-1 mt-1">
+              <div className="flex justify-between">
+                <span>Buff radius:</span>
+                <span>{selectedTower.buffRadius} cells</span>
+              </div>
+              {getBuffDescription(selectedTower.type) && (
+                <div className="text-xs text-gray-600">{getBuffDescription(selectedTower.type)}</div>
+              )}
             </div>
           )}
           

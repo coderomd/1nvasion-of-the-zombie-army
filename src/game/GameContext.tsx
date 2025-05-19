@@ -100,39 +100,10 @@ const createEnemy = (type: EnemyType): Enemy => {
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'START_GAME':
-      return {
-        ...state,
-        gameStatus: 'running',
-        lastEnemySpawnTime: Date.now(),
-      };
-      
     case 'PAUSE_GAME':
-      return {
-        ...state,
-        gameStatus: 'paused',
-      };
-      
     case 'RESUME_GAME':
-      return {
-        ...state,
-        gameStatus: 'running',
-        lastEnemySpawnTime: Date.now(),
-      };
-      
     case 'SELECT_TOWER_TYPE':
-      return {
-        ...state,
-        selectedTowerType: action.payload,
-        selectedTower: null,
-      };
-      
     case 'SELECT_TOWER':
-      return {
-        ...state,
-        selectedTower: action.payload,
-        selectedTowerType: null,
-      };
-      
     case 'PLACE_TOWER': {
       const { x, y } = action.payload;
       const cell = state.grid[y][x];
@@ -447,6 +418,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           return updatedEnemy;
         });
       
+      // Calculate the blacksmith buffs for gold miners
+      const blacksmiths = state.towers.filter(tower => tower.type === TowerType.BLACKSMITH);
+      
       // Reset attack animation states that have finished
       let additionalGold = 0;
       const updatedTowers = state.towers.map(tower => {
@@ -460,9 +434,25 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         // Process gold miners production
         if (tower.type === TowerType.GOLD_MINER && tower.goldProductionRate && tower.lastGoldTime) {
           const goldElapsedTime = now - tower.lastGoldTime;
-          // Gold miners produce every 5 seconds
-          if (goldElapsedTime >= 5000) {
-            additionalGold += tower.goldProductionRate;
+          // Gold miners produce every 2 seconds (changed from 5 seconds)
+          if (goldElapsedTime >= 2000) { // Changed from 5000
+            // Check if there are blacksmiths nearby to buff gold production
+            let productionBonus = 1.0;
+            for (const blacksmith of blacksmiths) {
+              const dx = tower.position.x - blacksmith.position.x;
+              const dy = tower.position.y - blacksmith.position.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              if (distance <= blacksmith.buffRadius) {
+                // Add 20% bonus for each blacksmith level
+                productionBonus += 0.2 * blacksmith.level;
+                break; // Only apply the buff from one blacksmith (the highest level one)
+              }
+            }
+            
+            // Apply the production bonus
+            additionalGold += Math.round(tower.goldProductionRate * productionBonus);
+            
             return {
               ...tower,
               lastGoldTime: now,
