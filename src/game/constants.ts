@@ -114,7 +114,7 @@ export const GAME_PATH = [
 
 export const UPGRADE_MULTIPLIERS = {
   damage: 1.5,
-  range: 1.2,
+  range: 1.1, // Reduced from 1.2 to make range increases smaller
   attackSpeed: 1.2,
   upgradeCost: 1.5,
   goldProductionRate: 1.5,
