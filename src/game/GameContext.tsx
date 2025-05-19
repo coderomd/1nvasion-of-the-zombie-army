@@ -448,6 +448,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         });
       
       // Reset attack animation states that have finished
+      let additionalGold = 0;
       const updatedTowers = state.towers.map(tower => {
         if (tower.isAttacking && tower.attackAnimationEnd && tower.attackAnimationEnd <= now) {
           return {
@@ -457,10 +458,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         }
         
         // Process gold miners production
-        if (tower.goldProductionRate && tower.lastGoldTime) {
+        if (tower.type === TowerType.GOLD_MINER && tower.goldProductionRate && tower.lastGoldTime) {
           const goldElapsedTime = now - tower.lastGoldTime;
           // Gold miners produce every 5 seconds
           if (goldElapsedTime >= 5000) {
+            additionalGold += tower.goldProductionRate;
             return {
               ...tower,
               lastGoldTime: now,
@@ -483,7 +485,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...updatedState,
         enemies: survivingEnemies,
         towers: updatedTowers,
-        gold: updatedState.gold + goldFromKills,
+        gold: updatedState.gold + goldFromKills + additionalGold,
       };
     }
     
