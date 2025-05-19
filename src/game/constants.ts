@@ -1,3 +1,4 @@
+
 import { TowerType, EnemyType } from './types';
 
 export const GRID_SIZE = 10;
@@ -5,7 +6,7 @@ export const CELL_SIZE = 40; // pixels
 
 export const TOWER_BASE_STATS = {
   [TowerType.KNIGHT]: {
-    damage: 15,
+    damage: 10, // Reduced from 15
     range: 1,
     attackSpeed: 1,
     cost: 100,
@@ -15,7 +16,7 @@ export const TOWER_BASE_STATS = {
     goldProductionRate: 0,
   },
   [TowerType.ARCHER]: {
-    damage: 8,
+    damage: 6, // Reduced from 8
     range: 3,
     attackSpeed: 1.5,
     cost: 75,
@@ -25,7 +26,7 @@ export const TOWER_BASE_STATS = {
     goldProductionRate: 0,
   },
   [TowerType.CANNON]: {
-    damage: 25,
+    damage: 18, // Reduced from 25
     range: 2,
     attackSpeed: 0.5,
     cost: 150,
