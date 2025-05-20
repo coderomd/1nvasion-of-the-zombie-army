@@ -17,8 +17,8 @@ const GameMap: React.FC = () => {
     if (towerAtPosition) {
       // If there's a tower, select it
       selectTower(towerAtPosition);
-    } else if (selectedTowerType) {
-      // If no tower and a tower type is selected, place a new tower
+    } else if (selectedTowerType && !grid[y][x].hasTower) {
+      // If no tower, cell is not a path, and a tower type is selected, place a new tower
       placeTower(x, y);
     }
   };
@@ -52,7 +52,7 @@ const GameMap: React.FC = () => {
       )}
       
       {/* Render towers */}
-      {state.towers.map(tower => (
+      {towers.map(tower => (
         <Tower key={tower.id} tower={tower} />
       ))}
       

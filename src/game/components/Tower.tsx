@@ -78,12 +78,12 @@ const TowerComponent: React.FC<TowerProps> = ({ tower }) => {
     }
   };
 
-  // Only show range indicator for selected towers or when hovering
+  // Only show range indicator for selected towers or when hovering, NOT during attacks
   const showRangeIndicator = isSelected || isHovered;
 
   return (
     <div 
-      className="tower"
+      className="tower absolute"
       style={{
         width: CELL_SIZE,
         height: CELL_SIZE,
@@ -108,10 +108,10 @@ const TowerComponent: React.FC<TowerProps> = ({ tower }) => {
           {tower.level}
         </span>
         
-        {/* Range indicator (only visible when selected or hovered) */}
+        {/* Range indicator (only visible when selected or hovered, not during attacks) */}
         {showRangeIndicator && tower.range > 0 && (
           <div 
-            className="absolute rounded-full border border-white/30 bg-white/5 animate-pulse z-0 pointer-events-none"
+            className="absolute rounded-full border border-white/30 bg-white/5 z-0 pointer-events-none"
             style={{
               width: tower.range * 2 * CELL_SIZE,
               height: tower.range * 2 * CELL_SIZE,
