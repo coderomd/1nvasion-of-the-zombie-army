@@ -7,12 +7,18 @@ import Enemy from './Enemy';
 import GoldIndicator from './GoldIndicator';
 
 const GameMap: React.FC = () => {
-  const { state, placeTower } = useGame();
-  const { grid, enemies, selectedTowerType, goldIndicators } = state;
+  const { state, placeTower, selectTower } = useGame();
+  const { grid, enemies, selectedTowerType, goldIndicators, towers } = state;
   
   const handleCellClick = (x: number, y: number) => {
-    // Only allow placing towers if a tower type is selected
-    if (selectedTowerType) {
+    // Check if there's a tower on this cell
+    const towerAtPosition = towers.find(t => t.position.x === x && t.position.y === y);
+    
+    if (towerAtPosition) {
+      // If there's a tower, select it
+      selectTower(towerAtPosition);
+    } else if (selectedTowerType) {
+      // If no tower and a tower type is selected, place a new tower
       placeTower(x, y);
     }
   };
@@ -33,14 +39,14 @@ const GameMap: React.FC = () => {
             className={`absolute border border-game-green-moss/30 cursor-pointer
               ${cell.isPath ? 'path-cell' : 'bg-game-green-grass/40'}
               ${!cell.isPath && !cell.hasTower && selectedTowerType ? 'hover:bg-game-green-grass/60' : ''}
-              ${cell.hasTower ? 'cursor-default' : ''}`}
+              ${cell.hasTower ? 'cursor-pointer' : ''}`}
             style={{
               left: x * CELL_SIZE,
               top: y * CELL_SIZE,
               width: CELL_SIZE,
               height: CELL_SIZE,
             }}
-            onClick={() => !cell.hasTower && !cell.isPath ? handleCellClick(x, y) : undefined}
+            onClick={() => !cell.isPath ? handleCellClick(x, y) : undefined}
           />
         ))
       )}

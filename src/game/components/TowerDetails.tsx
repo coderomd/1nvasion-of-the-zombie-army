@@ -3,6 +3,12 @@ import React from 'react';
 import { useGame } from '../GameContext';
 import { Button } from '@/components/ui/button';
 import { CELL_SIZE } from '../constants';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const TowerDetails: React.FC = () => {
   const { state, upgradeTower, sellTower, selectTower } = useGame();
@@ -27,6 +33,18 @@ const TowerDetails: React.FC = () => {
     switch (type) {
       case 'blacksmith': return "Buffs nearby Knights' damage and Gold Miners' production";
       default: return "";
+    }
+  };
+
+  const handleUpgradeTower = () => {
+    if (canAffordUpgrade && selectedTower) {
+      upgradeTower(selectedTower);
+    }
+  };
+
+  const handleSellTower = () => {
+    if (selectedTower) {
+      sellTower(selectedTower);
     }
   };
 
@@ -105,25 +123,45 @@ const TowerDetails: React.FC = () => {
         </div>
         
         <div className="mt-3 flex gap-2">
-          <Button
-            onClick={() => upgradeTower(selectedTower)}
-            disabled={!canAffordUpgrade}
-            variant="default"
-            className={`
-              flex-1 text-xs py-1
-              ${!canAffordUpgrade ? 'opacity-50 cursor-not-allowed' : ''}
-            `}
-          >
-            Upgrade ({selectedTower.upgradeCost} 💰)
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleUpgradeTower}
+                  disabled={!canAffordUpgrade}
+                  variant="default"
+                  className={`
+                    flex-1 text-xs py-1
+                    ${!canAffordUpgrade ? 'opacity-50 cursor-not-allowed' : ''}
+                  `}
+                >
+                  Upgrade ({selectedTower.upgradeCost} 💰)
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {canAffordUpgrade 
+                  ? 'Upgrade your tower to increase its power!'
+                  : 'Not enough gold to upgrade this tower'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           
-          <Button
-            onClick={() => sellTower(selectedTower)}
-            variant="destructive"
-            className="flex-1 text-xs py-1"
-          >
-            Sell
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleSellTower}
+                  variant="destructive"
+                  className="flex-1 text-xs py-1"
+                >
+                  Sell
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Sell this tower for {selectedTower.sellValue} gold
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </div>

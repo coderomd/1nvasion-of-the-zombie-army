@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Tower } from '../types';
 import { CELL_SIZE } from '../constants';
+import { useGame } from '../GameContext';
 
 interface TowerProps {
   tower: Tower;
@@ -9,6 +10,9 @@ interface TowerProps {
 
 const TowerComponent: React.FC<TowerProps> = ({ tower }) => {
   const [isAnimating, setIsAnimating] = useState(false);
+  const { state } = useGame();
+  const isSelected = state.selectedTower?.id === tower.id;
+  const [isHovered, setIsHovered] = useState(false);
 
   // Track tower attack state to trigger animation
   useEffect(() => {
@@ -74,6 +78,9 @@ const TowerComponent: React.FC<TowerProps> = ({ tower }) => {
     }
   };
 
+  // Only show range indicator for selected towers or when hovering
+  const showRangeIndicator = isSelected || isHovered;
+
   return (
     <div 
       className="tower"
@@ -83,6 +90,8 @@ const TowerComponent: React.FC<TowerProps> = ({ tower }) => {
         left: tower.position.x * CELL_SIZE,
         top: tower.position.y * CELL_SIZE,
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div 
         className={`w-4/5 h-4/5 rounded-full flex items-center justify-center text-white font-bold relative ${isAnimating ? getAttackAnimation(tower.type) : ''}`}
@@ -91,6 +100,7 @@ const TowerComponent: React.FC<TowerProps> = ({ tower }) => {
           margin: '10%',
           transition: 'all 0.3s ease',
           transform: isAnimating ? 'scale(1.1)' : 'scale(1)',
+          outline: isSelected ? '2px solid white' : 'none',
         }}
       >
         <span className="text-xl drop-shadow-lg">{getTowerIcon(tower.type)}</span>
@@ -98,8 +108,8 @@ const TowerComponent: React.FC<TowerProps> = ({ tower }) => {
           {tower.level}
         </span>
         
-        {/* Range indicator (only visible when tower is attacking) */}
-        {isAnimating && (
+        {/* Range indicator (only visible when selected or hovered) */}
+        {showRangeIndicator && tower.range > 0 && (
           <div 
             className="absolute rounded-full border border-white/30 bg-white/5 animate-pulse z-0 pointer-events-none"
             style={{
