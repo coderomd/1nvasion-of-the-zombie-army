@@ -26,23 +26,28 @@ const TowerComponent: React.FC<TowerProps> = ({ tower }) => {
 
   const towerStyles: Record<string, React.CSSProperties> = {
     knight: {
-      backgroundColor: '#A52A2A',
+      background: 'radial-gradient(circle, #A52A2A 60%, #8B0000 100%)',
+      boxShadow: '0 0 10px rgba(165, 42, 42, 0.5)',
       border: '2px solid #8B0000'
     },
     archer: {
-      backgroundColor: '#556B2F',
+      background: 'radial-gradient(circle, #556B2F 60%, #2F4F4F 100%)',
+      boxShadow: '0 0 10px rgba(85, 107, 47, 0.5)',
       border: '2px solid #2F4F4F'
     },
     cannon: {
-      backgroundColor: '#444444',
+      background: 'radial-gradient(circle, #444444 60%, #000000 100%)',
+      boxShadow: '0 0 10px rgba(68, 68, 68, 0.5)',
       border: '2px solid #000000'
     },
     goldMiner: {
-      backgroundColor: '#D4AF37',
+      background: 'radial-gradient(circle, #D4AF37 60%, #B8860B 100%)',
+      boxShadow: '0 0 10px rgba(212, 175, 55, 0.7)',
       border: '2px solid #B8860B'
     },
     blacksmith: {
-      backgroundColor: '#8B4513',
+      background: 'radial-gradient(circle, #8B4513 60%, #654321 100%)',
+      boxShadow: '0 0 10px rgba(139, 69, 19, 0.5)',
       border: '2px solid #654321'
     }
   };
@@ -70,22 +75,50 @@ const TowerComponent: React.FC<TowerProps> = ({ tower }) => {
   };
 
   return (
-    <div className="tower">
+    <div 
+      className="tower"
+      style={{
+        width: CELL_SIZE,
+        height: CELL_SIZE,
+        left: tower.position.x * CELL_SIZE,
+        top: tower.position.y * CELL_SIZE,
+      }}
+    >
       <div 
         className={`w-4/5 h-4/5 rounded-full flex items-center justify-center text-white font-bold relative ${isAnimating ? getAttackAnimation(tower.type) : ''}`}
-        style={towerStyles[tower.type]}
+        style={{
+          ...towerStyles[tower.type],
+          margin: '10%',
+          transition: 'all 0.3s ease',
+          transform: isAnimating ? 'scale(1.1)' : 'scale(1)',
+        }}
       >
-        <span className="text-xl">{getTowerIcon(tower.type)}</span>
-        <span className="absolute -top-1 -right-1 bg-white text-black text-xs w-4 h-4 rounded-full flex items-center justify-center">
+        <span className="text-xl drop-shadow-lg">{getTowerIcon(tower.type)}</span>
+        <span className="absolute -top-1 -right-1 bg-white text-black text-xs w-5 h-5 rounded-full flex items-center justify-center border-2 border-gray-700 shadow-md">
           {tower.level}
         </span>
+        
+        {/* Range indicator (only visible when tower is attacking) */}
+        {isAnimating && (
+          <div 
+            className="absolute rounded-full border border-white/30 bg-white/5 animate-pulse z-0 pointer-events-none"
+            style={{
+              width: tower.range * 2 * CELL_SIZE,
+              height: tower.range * 2 * CELL_SIZE,
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        )}
         
         {/* Attack effect overlay */}
         {isAnimating && (
           <div className={`absolute inset-0 rounded-full ${tower.type === 'archer' ? 'border-2 border-yellow-400 animate-ping' : 
                                                 tower.type === 'cannon' ? 'bg-red-500/30 animate-ping' : 
                                                 tower.type === 'knight' ? 'border-2 border-red-600 animate-pulse' : 
-                                                'border-2 border-white animate-pulse'}`}>
+                                                tower.type === 'goldMiner' ? 'bg-yellow-300/30 animate-spin' :
+                                                'border-2 border-orange-500 animate-pulse'}`}>
           </div>
         )}
       </div>

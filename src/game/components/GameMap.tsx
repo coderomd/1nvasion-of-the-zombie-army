@@ -19,7 +19,7 @@ const GameMap: React.FC = () => {
   
   return (
     <div 
-      className="game-map relative"
+      className="game-map relative rounded-lg overflow-hidden shadow-lg td-map"
       style={{ 
         width: CELL_SIZE * GRID_SIZE, 
         height: CELL_SIZE * GRID_SIZE 
@@ -30,9 +30,9 @@ const GameMap: React.FC = () => {
         row.map((cell, x) => (
           <div
             key={`${x}-${y}`}
-            className={`absolute border border-gray-700 cursor-pointer
-              ${cell.isPath ? 'bg-yellow-800' : 'bg-green-800'}
-              ${!cell.isPath && !cell.hasTower && selectedTowerType ? 'hover:bg-green-700' : ''}
+            className={`absolute border border-game-green-moss/30 cursor-pointer
+              ${cell.isPath ? 'path-cell' : 'bg-game-green-grass/40'}
+              ${!cell.isPath && !cell.hasTower && selectedTowerType ? 'hover:bg-game-green-grass/60' : ''}
               ${cell.hasTower ? 'cursor-default' : ''}`}
             style={{
               left: x * CELL_SIZE,
@@ -40,7 +40,7 @@ const GameMap: React.FC = () => {
               width: CELL_SIZE,
               height: CELL_SIZE,
             }}
-            onClick={() => handleCellClick(x, y)}
+            onClick={() => !cell.hasTower && !cell.isPath ? handleCellClick(x, y) : undefined}
           />
         ))
       )}

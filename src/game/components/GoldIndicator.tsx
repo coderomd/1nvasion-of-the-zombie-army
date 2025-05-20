@@ -27,15 +27,15 @@ const GoldIndicator: React.FC<GoldIndicatorProps> = ({ indicator }) => {
   
   return (
     <div
-      className="absolute pointer-events-none animate-fade-in flex items-center justify-center"
+      className="absolute pointer-events-none flex items-center justify-center z-20"
       style={{
         left: `${x}px`,
         top: `${y}px`,
         transform: 'translate(-50%, -50%)',
-        animation: 'fade-in 0.3s ease-out, float-up 2s ease-out',
+        animation: 'float-up 2s ease-out',
       }}
     >
-      <div className="text-yellow-400 font-bold text-sm bg-black bg-opacity-50 px-2 py-1 rounded-md">
+      <div className="text-game-gold-light font-bold text-sm bg-black bg-opacity-70 px-2 py-1 rounded-full border border-game-gold-dark shadow-lg">
         +{amount} 💰
       </div>
     </div>
