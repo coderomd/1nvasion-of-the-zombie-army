@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useReducer, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { GameState, Tower, TowerType, Enemy, EnemyType, GridCell, PathPoint, Wave } from './types';
@@ -100,10 +101,36 @@ const createEnemy = (type: EnemyType): Enemy => {
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'START_GAME':
+      return {
+        ...state,
+        gameStatus: 'running',
+        lastEnemySpawnTime: Date.now(),
+      };
+      
     case 'PAUSE_GAME':
+      return {
+        ...state,
+        gameStatus: 'paused'
+      };
+      
     case 'RESUME_GAME':
+      return {
+        ...state,
+        gameStatus: 'running'
+      };
+      
     case 'SELECT_TOWER_TYPE':
+      return {
+        ...state,
+        selectedTowerType: action.payload
+      };
+      
     case 'SELECT_TOWER':
+      return {
+        ...state,
+        selectedTower: action.payload
+      };
+      
     case 'PLACE_TOWER': {
       const { x, y } = action.payload;
       const cell = state.grid[y][x];
@@ -480,7 +507,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     }
     
     case 'START_WAVE': {
-      // Start the next wave
       return {
         ...state,
         gameStatus: 'running',
