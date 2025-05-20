@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -127,5 +126,16 @@
 
   .game-panel {
     @apply bg-game-parchment border-2 border-game-wood-dark rounded-md p-3 shadow-md;
+  }
+}
+
+@keyframes float-up {
+  from {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, -100px);
+    opacity: 0;
   }
 }

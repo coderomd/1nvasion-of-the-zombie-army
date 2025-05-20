@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, ReactNode, useReducer, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { GameState, Tower, TowerType, Enemy, EnemyType, GridCell, PathPoint, Wave } from './types';
+import { GameState, Tower, TowerType, Enemy, EnemyType, GridCell, PathPoint, Wave, GoldIndicator } from './types';
 import { 
   GRID_SIZE, 
   CELL_SIZE, 
@@ -32,7 +31,8 @@ type GameAction =
   | { type: 'ENEMY_KILLED', payload: Enemy }
   | { type: 'SPAWN_ENEMY' }
   | { type: 'BUY_LIFE' }
-  | { type: 'CONTINUE_AFTER_VICTORY' };
+  | { type: 'CONTINUE_AFTER_VICTORY' }
+  | { type: 'REMOVE_GOLD_INDICATOR', payload: string };
 
 // Initialize grid with path
 const initializeGrid = (): GridCell[][] => {
@@ -78,6 +78,8 @@ const initialState: GameState = {
   totalWaves: INITIAL_GAME_STATE.totalWaves,
   lastEnemySpawnTime: 0,
   enemiesSpawned: 0,
+  goldMultiplier: 1.0, // New property for gold rewards scaling
+  goldIndicators: [], // New array to track gold indicators for animations
 };
 
 // Helper function to create a new enemy
@@ -278,9 +280,9 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       // Check if wave is complete and all enemies are dead
       if (state.wave.completed && state.enemies.length === 0) {
         // Calculate wave completion rewards
-        const waveCompletionGold = WAVE_COMPLETION_REWARDS.BASE_GOLD +
+        const waveCompletionGold = Math.round((WAVE_COMPLETION_REWARDS.BASE_GOLD +
           (state.lives * WAVE_COMPLETION_REWARDS.PER_LIFE_BONUS) +
-          (state.towers.length * WAVE_COMPLETION_REWARDS.PER_TOWER_BONUS);
+          (state.towers.length * WAVE_COMPLETION_REWARDS.PER_TOWER_BONUS)) * state.goldMultiplier);
         
         // Start next wave if available
         const nextWaveNumber = state.waveNumber + 1;
@@ -292,6 +294,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             enemiesSpawned: 0,
             lastEnemySpawnTime: Date.now(),
             gold: state.gold + waveCompletionGold,
+            // Reduce gold multiplier by 25% after each round
+            goldMultiplier: state.goldMultiplier * 0.75,
           };
         } else {
           // Victory!
@@ -450,6 +454,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       
       // Reset attack animation states that have finished
       let additionalGold = 0;
+      const newGoldIndicators: GoldIndicator[] = [...state.goldIndicators];
+      
       const updatedTowers = state.towers.map(tower => {
         if (tower.isAttacking && tower.attackAnimationEnd && tower.attackAnimationEnd <= now) {
           return {
@@ -461,8 +467,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         // Process gold miners production
         if (tower.type === TowerType.GOLD_MINER && tower.goldProductionRate && tower.lastGoldTime) {
           const goldElapsedTime = now - tower.lastGoldTime;
-          // Gold miners produce every 2 seconds (changed from 5 seconds)
-          if (goldElapsedTime >= 2000) { // Changed from 5000
+          // Gold miners produce every 2 seconds
+          if (goldElapsedTime >= 2000) {
             // Check if there are blacksmiths nearby to buff gold production
             let productionBonus = 1.0;
             for (const blacksmith of blacksmiths) {
@@ -477,8 +483,20 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
               }
             }
             
-            // Apply the production bonus
-            additionalGold += Math.round(tower.goldProductionRate * productionBonus);
+            // Apply the production bonus and gold multiplier
+            const goldProduced = Math.round(tower.goldProductionRate * productionBonus * state.goldMultiplier);
+            additionalGold += goldProduced;
+            
+            // Create a gold indicator
+            const newIndicator: GoldIndicator = {
+              id: uuidv4(),
+              position: { ...tower.position },
+              amount: goldProduced,
+              createdAt: now,
+              duration: 2000, // 2 seconds animation
+            };
+            
+            newGoldIndicators.push(newIndicator);
             
             return {
               ...tower,
@@ -491,18 +509,26 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         return tower;
       });
       
+      // Filter out expired gold indicators
+      const currentGoldIndicators = newGoldIndicators.filter(
+        indicator => now - indicator.createdAt < indicator.duration
+      );
+      
       // Process killed enemies
       const killedEnemies = enemiesAfterTowerAttacks.filter(e => e.health <= 0);
       const survivingEnemies = enemiesAfterTowerAttacks.filter(e => e.health > 0);
       
-      // Calculate gold from killed enemies
-      const goldFromKills = killedEnemies.reduce((total, enemy) => total + enemy.goldReward, 0);
+      // Calculate gold from killed enemies (with goldMultiplier applied)
+      const goldFromKills = Math.round(
+        killedEnemies.reduce((total, enemy) => total + enemy.goldReward, 0) * state.goldMultiplier
+      );
       
       return {
         ...updatedState,
         enemies: survivingEnemies,
         towers: updatedTowers,
         gold: updatedState.gold + goldFromKills + additionalGold,
+        goldIndicators: currentGoldIndicators,
       };
     }
     
@@ -535,6 +561,13 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         gold: state.gold - lifeCost,
         lives: state.lives + 1,
+      };
+    }
+    
+    case 'REMOVE_GOLD_INDICATOR': {
+      return {
+        ...state,
+        goldIndicators: state.goldIndicators.filter(indicator => indicator.id !== action.payload)
       };
     }
     

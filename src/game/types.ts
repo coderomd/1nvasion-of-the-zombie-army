@@ -73,6 +73,15 @@ export type Wave = {
   completed: boolean;
 };
 
+// New type for gold indicators
+export type GoldIndicator = {
+  id: string;
+  position: GridPosition;
+  amount: number;
+  createdAt: number;
+  duration: number;
+};
+
 export type GameState = {
   grid: GridCell[][];
   path: PathPoint[];
@@ -88,4 +97,6 @@ export type GameState = {
   totalWaves: number;
   lastEnemySpawnTime: number; // timestamp of last enemy spawn
   enemiesSpawned: number; // count of enemies spawned in current wave
+  goldMultiplier: number; // multiplier for gold rewards (decreases each round)
+  goldIndicators: GoldIndicator[]; // visual indicators for gold production
 };
